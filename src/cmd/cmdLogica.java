@@ -38,8 +38,22 @@ public class cmdLogica {
         if(modoEscritura){
             return "";
         }
-        return actual.getAbsolutePath();
+        return rutaVirtual(actual);
     }
+    
+    public boolean estaEscribiendo(){
+        return modoEscritura;
+    }
+    
+    private String rutaVirtual(File f){
+    String base = raiz.getAbsoluteFile().getParent();
+    String relativa = f.getAbsolutePath().substring(base.length());
+    relativa = relativa.replace("/", "\\");
+    if(!relativa.startsWith("\\")){
+        relativa = "\\" + relativa;
+    }
+    return "C:" + relativa;
+}
     
     private boolean nombreValido(String nombre) {
         if (nombre.isEmpty()){
@@ -109,8 +123,6 @@ public class cmdLogica {
                 return Copy(resto);
             case "find":
                 return Find(resto);
-            case "grep":
-                return Grep(resto);
             case "info":
                 return Info(resto);
             case "tree":
@@ -122,7 +134,6 @@ public class cmdLogica {
             case "exit":
                 return SALIR;
             default:
-
                 return "'"+comando+"' no se reconoce como un comando interno o externo.";
         }}
     
@@ -221,7 +232,7 @@ public class cmdLogica {
             return a.getName().compareToIgnoreCase(b.getName());
         });
         StringBuilder sb=new StringBuilder();
-        sb.append("Contenido de ").append(actual.getAbsolutePath()).append(":\n\n");
+        sb.append("Contenido de ").append(rutaVirtual(actual)).append(":\n\n");
         int carpetas=0;
         int archivos=0;
         for(File f : items){
@@ -278,7 +289,7 @@ public class cmdLogica {
     }
 
     private String escribirLinea(String linea){
-        if(linea.equalsIgnoreCase("EXIT")){
+        if(linea.trim().equalsIgnoreCase("EXIT")){
             try(FileWriter fw=new FileWriter(archivoEscritura, modoAgregar)){
                 for(String l : lineasEscritura){
                     fw.write(l);
@@ -363,8 +374,11 @@ public class cmdLogica {
         }
         File origen=devolverRuta(nombreOrigen);
         File destino=devolverRuta(nombreDestino);
-        if(!origen.exists() || origen.isDirectory()){
+        if(!origen.exists()){
             return "Error: el archivo origen '"+nombreOrigen+"' no existe.";
+        }
+        if(origen.isDirectory()){
+            return "Error: '"+nombreOrigen+"' es una carpeta, solo se pueden copiar archivos.";
         }
         if(destino.exists()){
             return "Error: ya existe un archivo o carpeta llamado '"+nombreDestino+"'.";
@@ -406,7 +420,7 @@ public class cmdLogica {
         }
         for(File f : items){
             if(f.getName().toLowerCase().contains(textoBuscado)){
-                resultados.add(f.getAbsolutePath());
+                resultados.add(rutaVirtual(f));
             }
             if(f.isDirectory()){
                 buscarRecursivo(f, textoBuscado, resultados);
@@ -429,7 +443,7 @@ public class cmdLogica {
         StringBuilder sb=new StringBuilder();
         sb.append("Nombre: ").append(objetivo.getName()).append("\n");
         sb.append("Tipo: ").append(tipo).append("\n");
-        sb.append("Ruta: ").append(objetivo.getAbsolutePath()).append("\n");
+        sb.append("Ruta: ").append(rutaVirtual(objetivo)).append("\n");
         sb.append("Tamano: ").append(tamano).append(" bytes\n");
         sb.append("Ultima modificacion: ").append(fecha);
         return sb.toString();
@@ -451,7 +465,7 @@ public class cmdLogica {
     
     private String Tree(){
         StringBuilder sb=new StringBuilder();
-        sb.append("Estructura de ").append(actual.getAbsolutePath()).append(":\n");
+        sb.append("Estructura de ").append(rutaVirtual(actual)).append(":\n");
         sb.append(actual.getName()).append("\n");
         arbolRecursivo(actual, "", sb);
         return sb.toString();
@@ -478,44 +492,6 @@ public class cmdLogica {
         }
     }
     
-    private String Grep(String resto){
-        int espacio=resto.lastIndexOf(' ');
-        if(espacio==-1){
-            return "Uso: Grep <texto> <archivo>";
-        }
-        String texto=resto.substring(0,espacio).trim();
-        String nombre=resto.substring(espacio+1).trim();
-        if(texto.isEmpty() || nombre.isEmpty()){
-            return "Uso: Grep <texto> <archivo>";
-        }
-        if(!nombreValido(nombre)){
-            return "Error: el nombre ingresado no es valido.";
-        }
-        File archivo=devolverRuta(nombre);
-        if(!archivo.exists() || archivo.isDirectory()){
-            return "Error: el archivo '"+nombre+"' no existe.";
-        }
-        StringBuilder sb=new StringBuilder();
-        int encontradas=0;
-        try(BufferedReader br=new BufferedReader(new FileReader(archivo))){
-            String linea;
-            int numero=1;
-            while((linea=br.readLine())!=null){
-                if(linea.toLowerCase().contains(texto.toLowerCase())){
-                    sb.append("    ").append(numero).append(": ").append(linea).append("\n");
-                    encontradas++;
-                }
-                numero++;
-            }
-        }catch(IOException e){
-            return "Error al leer el archivo: "+e.getMessage();
-        }
-        if(encontradas==0){
-            return "No se encontro '"+texto+"' en '"+nombre+"'.";
-        }
-        return "Coincidencias para '"+texto+"' en '"+nombre+"':\n\n"+sb
-                +"\n"+encontradas+" coincidencia(s) encontrada(s).";
-    }
 
     private String Help(){
         return String.join("\n",
@@ -538,8 +514,7 @@ public class cmdLogica {
                 "  Tree                      - Muestra el arbol de carpetas y archivos",
                 "  Cls                       - Limpia la pantalla",
                 "  Help                      - Muestra esta ayuda",
-                "  Exit                      - Cierra la aplicacion",
-                "  Grep <texto> <archivo>    - Busca texto dentro de un archivo"
+                "  Exit                      - Cierra la aplicacion"
         );
     }
 }

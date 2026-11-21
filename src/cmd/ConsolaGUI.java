@@ -111,11 +111,17 @@ public class ConsolaGUI extends JFrame {
     }
 
     private void leerEntrada() {
-        String comando = entrada.getText().trim();
+        boolean escribiendo = logica.prompt().isEmpty();
+        String comando = entrada.getText();
+        if (!escribiendo) {
+            comando = comando.trim();
+        }
         salida.append(etiquetaPrompt.getText() + comando + "\n");
-        if (comando.length() > 0) {
-            historial.add(comando);
-            indiceHistorial = historial.size();
+        if (escribiendo || comando.length() > 0) {
+            if (!escribiendo) {
+                historial.add(comando);
+                indiceHistorial = historial.size();
+            }
             String resultado = procesar(comando);
             if (resultado.length() > 0) {
                 salida.append(resultado + "\n");
