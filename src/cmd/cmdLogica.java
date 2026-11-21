@@ -80,44 +80,46 @@ public class cmdLogica {
             resto=texto.substring(espacio+1).trim();
         }
 
-        switch (comando){
-            case "Mkdir":
+        switch (comando.toLowerCase()){
+            case "mkdir":
                 return Mkdir(resto);
-            case"Mfile":
+            case "mfile":
                 return Mfile(resto);
             case "..":
                 return subirPadre();
-            case "Cd":
+            case "cd":
                 return Cd(resto);
-            case "Rm":
+            case "rm":
                 return Rm(resto);
-            case "Dir":
+            case "dir":
                 return Dir();
-            case "Date":
+            case "date":
                 return Date();
-            case "Time":
+            case "time":
                 return Time();
-            case "Wr":
+            case "wr":
                 return Wr(resto);
-            case "Rd":
+            case "rd":
                 return Rd(resto);
-            case "Ap":
+            case "ap":
                 return Ap(resto);
-            case "Ren":
+            case "ren":
                 return Ren(resto);
-            case "Copy":
+            case "copy":
                 return Copy(resto);
-            case "Find":
+            case "find":
                 return Find(resto);
-            case "Info":
+            case "grep":
+                return Grep(resto);
+            case "info":
                 return Info(resto);
-            case "Tree":
+            case "tree":
                 return Tree();
-            case "Cls":
+            case "cls":
                 return LIMPIAR;
-            case "Help":
+            case "help":
                 return Help();
-            case "Exit":
+            case "exit":
                 return SALIR;
             default:
 
@@ -276,7 +278,7 @@ public class cmdLogica {
     }
 
     private String escribirLinea(String linea){
-        if(linea.equals("EXIT")){
+        if(linea.equalsIgnoreCase("EXIT")){
             try(FileWriter fw=new FileWriter(archivoEscritura, modoAgregar)){
                 for(String l : lineasEscritura){
                     fw.write(l);
@@ -476,6 +478,45 @@ public class cmdLogica {
         }
     }
     
+    private String Grep(String resto){
+        int espacio=resto.lastIndexOf(' ');
+        if(espacio==-1){
+            return "Uso: Grep <texto> <archivo>";
+        }
+        String texto=resto.substring(0,espacio).trim();
+        String nombre=resto.substring(espacio+1).trim();
+        if(texto.isEmpty() || nombre.isEmpty()){
+            return "Uso: Grep <texto> <archivo>";
+        }
+        if(!nombreValido(nombre)){
+            return "Error: el nombre ingresado no es valido.";
+        }
+        File archivo=devolverRuta(nombre);
+        if(!archivo.exists() || archivo.isDirectory()){
+            return "Error: el archivo '"+nombre+"' no existe.";
+        }
+        StringBuilder sb=new StringBuilder();
+        int encontradas=0;
+        try(BufferedReader br=new BufferedReader(new FileReader(archivo))){
+            String linea;
+            int numero=1;
+            while((linea=br.readLine())!=null){
+                if(linea.toLowerCase().contains(texto.toLowerCase())){
+                    sb.append("    ").append(numero).append(": ").append(linea).append("\n");
+                    encontradas++;
+                }
+                numero++;
+            }
+        }catch(IOException e){
+            return "Error al leer el archivo: "+e.getMessage();
+        }
+        if(encontradas==0){
+            return "No se encontro '"+texto+"' en '"+nombre+"'.";
+        }
+        return "Coincidencias para '"+texto+"' en '"+nombre+"':\n\n"+sb
+                +"\n"+encontradas+" coincidencia(s) encontrada(s).";
+    }
+
     private String Help(){
         return String.join("\n",
                 "Comandos disponibles:",
