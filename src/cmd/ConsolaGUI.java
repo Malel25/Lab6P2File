@@ -37,11 +37,11 @@ public class ConsolaGUI extends JFrame {
     private String rutaActual;
     private ArrayList<String> historial;
     private int indiceHistorial;
-    private Comandos_logica logica;
+    private cmdLogica logica;
 
     public ConsolaGUI() {
         super("Simulador de Consola de Comandos");
-        logica = new Comandos_logica();
+        logica = new cmdLogica();
         rutaActual = rutaCorta(logica.prompt());
         historial = new ArrayList<String>();
         indiceHistorial = 0;
@@ -158,11 +158,11 @@ public class ConsolaGUI extends JFrame {
     private String procesar(String comando) {
         String resultado = logica.ejecutar(comando);
         setPrompt(rutaCorta(logica.prompt()));
-        if (resultado.equals(Comandos_logica.LIMPIAR)) {
+        if (resultado.equals(cmdLogica.LIMPIAR)) {
             salida.setText("");
             return "";
         }
-        if (resultado.equals(Comandos_logica.SALIR)) {
+        if (resultado.equals(cmdLogica.SALIR)) {
             System.exit(0);
         }
         return resultado;
